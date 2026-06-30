@@ -4,7 +4,7 @@
 
 A dynamic web app that converts user-provided documents into numeric vectors using **Bag of Words** and **TF-IDF**, then ranks them by **Cosine Similarity** against a user query.
 
-[![Live Preview](https://img.shields.io/badge/Live%20Preview-Visit%20Site-FF3D00?style=for-the-badge)](https://your-deploy-link.onrender.com)
+[![Live Preview](https://img.shields.io/badge/Live%20Preview-Visit%20Site-FF3D00?style=for-the-badge)](https://docsearch-4pi5.onrender.com/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Atharva%20Phatangare-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/atharva-phatangare)
 [![GitHub](https://img.shields.io/badge/GitHub-atharva--9423-black?style=for-the-badge&logo=github)](https://github.com/atharva-9423)
 ![Python](https://img.shields.io/badge/Python-3.x-yellow?style=for-the-badge&logo=python)
