@@ -71,8 +71,7 @@ pip install flask scikit-learn pypdf
 
 **Step 2** — Clone and run:
 ```bash
-git clone https://github.com/atharva-9423/UnProf_Pyai_10.git
-cd UnProf_Pyai_10
+git clone https://github.com/atharva-9423/UnProf_Pyai_10
 python3 app.py
 ```
 
