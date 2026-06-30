@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Similarity Search</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <style>
+                :root {
+            --paper: #FFFFFF;
+            --ink: #111111;
+            --grey: #767676;
+            --grey-lt: #ABABAB;
+            --grey-ultralight: #F7F7F7;
+            --line: #E2E2E2;
+            --accent: #FF3D00;
+            --accent-lt: #FFF1EC;
+        }
+
+        [data-theme="dark"] {
+            --paper: #1f1f1e;
+            --ink: #EDEDED;
+            --grey: #9A9A9A;
+            --grey-lt: #666666;
+            --grey-ultralight: #2a2a29;
+            --line: #3a3a39;
+            --accent: #FF3D00;
+            --accent-lt: #2e1a15;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            font-size: 16px;
+            line-height: 1.6;
+            transition: background-color 0.35s ease, color 0.35s ease;
+        }
+
+        * {
+            transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: var(--paper);
+        }
+
+        .wrap {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+                .masthead {
+            padding: 1.2rem 0 0;
+            border-bottom: 1px solid var(--ink);
+        }
+
+        .masthead__top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.8rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--grey);
+        }
+
+        .masthead__top span.accent {
+            color: var(--accent);
+        }
+
+        .masthead__title {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+            letter-spacing: -0.03em;
+            line-height: 0.95;
+            padding-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .masthead__title .line2 {
+            color: var(--accent);
+        }
+
+        .masthead__meta {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            border-top: 1px solid var(--line);
+            padding: 1.1rem 0;
+        }
+
+        .meta-block__label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--grey-lt);
+            margin-bottom: 0.3rem;
+        }
+
+        .meta-block__value {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+                .section {
+            padding: 1.8rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section__head {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section__num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .section__title {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.01em;
+            text-transform: uppercase;
+        }
+
+        .section__desc {
+            font-size: 0.85rem;
+            color: var(--grey);
+            max-width: 560px;
+            margin-top: -0.6rem;
+            margin-bottom: 1rem;
+        }
+
+                .two-col-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2.5rem;
+            padding: 1.8rem 0;
+            border-bottom: 1px solid var(--line);
+            align-items: start;
+        }
+
+        .two-col-layout .col-left {
+            border-right: 1px solid var(--line);
+            padding-right: 2rem;
+        }
+
+                .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid var(--ink);
+            border-left: 1px solid var(--ink);
+        }
+
+        .doc-card {
+            border-right: 1px solid var(--ink);
+            border-bottom: 1px solid var(--ink);
+            padding: 0.9rem 1rem;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.15s;
+            cursor: default;
+        }
+
+        .doc-card:hover {
+            background: var(--accent-lt);
+        }
+
+        .doc-card__num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+        }
+
+        .doc-card__title {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 700;
+            font-size: 0.92rem;
+            line-height: 1.25;
+            margin-bottom: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+        }
+
+        .doc-card__preview {
+            font-size: 0.78rem;
+            color: var(--grey);
+            line-height: 1.55;
+            flex: 1;
+        }
+
+                .query-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 1.5rem;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 0.6rem;
+        }
+
+        .query-input-wrap {
+            flex: 1;
+        }
+
+        .query-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--grey-lt);
+            margin-bottom: 0.6rem;
+            display: block;
+        }
+
+        #query-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-family: 'Archivo', sans-serif;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: var(--ink);
+            background: transparent;
+            letter-spacing: -0.01em;
+        }
+
+        #query-input::placeholder {
+            color: var(--line);
+        }
+
+        .search-btn {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: var(--ink);
+            color: var(--paper);
+            border: 2px solid var(--ink);
+            padding: 0.9rem 2.2rem;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .try-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .try-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--grey-lt);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .try-chip {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            padding: 0.35rem 0.7rem;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--grey);
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .try-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .error-text {
+            display: none;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--accent);
+            margin-top: 1rem;
+        }
+
+        .error-text.active {
+            display: block;
+        }
+
+                .loader-row {
+            display: none;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 2rem 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--grey);
+        }
+
+        .loader-row.active {
+            display: flex;
+        }
+
+        .loader-bar {
+            width: 60px;
+            height: 2px;
+            background: var(--line);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader-bar::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 100%;
+            background: var(--accent);
+            animation: slide 1s infinite linear;
+        }
+
+        @keyframes slide {
+            0% {
+                left: -30%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+                #results {
+            display: block;
+        }
+
+        #results.active {
+            display: block;
+        }
+
+        .best-match-banner {
+            border: 2px solid var(--ink);
+            padding: 1.3rem 1.6rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .best-match-banner__label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--grey-lt);
+            margin-bottom: 0.4rem;
+        }
+
+        .best-match-banner__title {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 800;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+        }
+
+        .best-match-banner__score {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+                .results-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+
+        .method-col__title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--grey);
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid var(--ink);
+            margin-bottom: 1.2rem;
+        }
+
+        .rank-item {
+            display: grid;
+            grid-template-columns: 56px 1fr;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .rank-item__num {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 900;
+            font-size: 2.1rem;
+            color: var(--line);
+            line-height: 1;
+        }
+
+        .rank-item:first-child .rank-item__num {
+            color: var(--accent);
+        }
+
+        .rank-item__body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .rank-item__title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        .rank-item__bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .rank-item__bar-track {
+            flex: 1;
+            height: 4px;
+            background: var(--line);
+            position: relative;
+        }
+
+        .rank-item__bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--ink);
+            transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .rank-item:first-child .rank-item__bar-fill {
+            background: var(--accent);
+        }
+
+        .rank-item__score {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--grey);
+            min-width: 48px;
+            text-align: right;
+        }
+
+                .footer {
+            padding: 2rem 0 3rem;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--grey-lt);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+                @media (max-width: 900px) {
+            .doc-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .masthead__meta {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+
+            .results-two-col {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .wrap {
+                padding: 0 1.2rem;
+            }
+
+            .doc-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .query-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            #query-input {
+                font-size: 1.2rem;
+            }
+
+            .search-btn {
+                width: 100%;
+            }
+
+            .best-match-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+                .dataset-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-outline {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: transparent;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            padding: 0.7rem 1.4rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-outline:hover {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .btn-text {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--grey);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .btn-text:hover {
+            color: var(--accent);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+                .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--paper);
+            border: 1px solid var(--ink);
+            width: 90%;
+            max-width: 640px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.25s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--grey);
+            background: none;
+            border: none;
+        }
+
+        .modal-close:hover {
+            color: var(--accent);
+        }
+
+                @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+                .pipeline-strip {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.8rem 0 1.2rem;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-step__num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .pipeline-step__name {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 800;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+        }
+
+        .pipeline-step__desc {
+            display: none;
+        }
+
+        .pipeline-step {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            background: var(--grey-ultralight);
+            border: 1px solid var(--line);
+            padding: 0.35rem 0.7rem;
+            border-radius: 2px;
+        }
+
+        .pipeline-step__desc strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .pipeline-arrow {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 900;
+            font-size: 0.9rem;
+            color: var(--grey-lt);
+            user-select: none;
+        }
+
+                .best-match-banner__snippet {
+            font-size: 0.82rem;
+            color: var(--grey);
+            line-height: 1.6;
+            margin-top: 0.6rem;
+            max-width: 600px;
+            font-style: italic;
+        }
+
+        .method-note {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--grey);
+            padding: 0.75rem 1rem;
+            background: #F7F7F7;
+            border-left: 3px solid var(--accent);
+            margin-bottom: 1.8rem;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .method-note.active { display: block; }
+
+        .score-legend {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--grey-lt);
+            letter-spacing: 0.03em;
+            margin-bottom: 2rem;
+        }
+
+        .score-legend code {
+            color: var(--grey);
+            font-family: inherit;
+            background: #F2F2F2;
+            padding: 0.1em 0.35em;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+
+        .stat-block__label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--grey-lt);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-block__value {
+            font-family: 'Archivo', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 760px) {
+            .pipeline-strip {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .pipeline-arrow { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrap">
+
+                <header class="masthead">
+            <div class="masthead__top">
+                <span>Vectorization &amp; Retrieval</span>
+                <button id="theme-toggle" onclick="toggleTheme()" style="
+                    background: none;
+                    border: 1px solid var(--grey-lt);
+                    color: var(--grey);
+                    font-family: 'IBM Plex Mono', monospace;
+                    font-size: 0.68rem;
+                    letter-spacing: 0.06em;
+                    text-transform: uppercase;
+                    padding: 0.3rem 0.8rem;
+                    cursor: pointer;
+                    transition: border-color 0.15s, color 0.15s;
+                " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--grey-lt)';this.style.color='var(--grey)'">&#9790; Dark</button>
+            </div>
+            <h1 class="masthead__title">
+                Document<br>
+                <span class="line2">Similarity Search</span>
+            </h1>
+            <div class="masthead__meta">
+                <div class="meta-block">
+                    <div class="meta-block__label">Method</div>
+                    <div class="meta-block__value">Bag of Words &amp; TF-IDF + Cosine Similarity</div>
+                </div>
+                <div class="meta-block">
+                    <div class="meta-block__label">Corpus Size</div>
+                    <div class="meta-block__value">5 Documents</div>
+                </div>
+                <div class="meta-block">
+                    <div class="meta-block__label">Engine</div>
+                    <div class="meta-block__value">scikit-learn</div>
+                </div>
+            </div>
+        </header>
+
+                <div class="two-col-layout">
+
+                        <div class="col-left">
+                <div class="section__head">
+                    <span class="section__num">00</span>
+                    <h2 class="section__title">Dataset</h2>
+                </div>
+                <p class="section__desc">
+                    Upload PDFs, type articles, or use the sample dataset.
+                </p>
+
+                <div class="dataset-controls" style="flex-direction: column; align-items: flex-start;">
+                    <input type="file" id="pdf-upload" accept=".pdf" multiple style="display: none;" onchange="handlePdfUpload(event)">
+                    <button class="btn-outline" style="width:100%;" onclick="document.getElementById('manual-modal').classList.remove('active'); document.getElementById('pdf-upload').click()">+ Upload PDFs</button>
+                    <button class="btn-outline" style="width:100%;" onclick="openManualModal()">✎ Type Articles</button>
+                    <button class="btn-outline" style="width:100%;" onclick="loadSampleDataset()">Use Sample Dataset</button>
+                    <button class="btn-outline" style="width:100%; border-color: var(--grey-lt); color: var(--grey);" onclick="clearDataset()" onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)';" onmouseout="this.style.borderColor='var(--grey-lt)'; this.style.color='var(--grey)';">✖ Clear Dataset</button>
+                </div>
+            </div>
+
+                        <div class="col-right">
+                <div class="section__head">
+                    <span class="section__num">01</span>
+                    <h2 class="section__title">Corpus</h2>
+                </div>
+                <p class="section__desc">Documents currently loaded in the knowledge base.</p>
+                <div class="doc-grid" id="doc-grid"></div>
+            </div>
+
+        </div>
+
+                <section class="section">
+            <div class="section__head">
+                <span class="section__num">02</span>
+                <h2 class="section__title">Run a Query</h2>
+            </div>
+            <p class="section__desc">Type a question or phrase and rank documents by cosine similarity.</p>
+
+                        <div class="pipeline-strip">
+                <div class="pipeline-step">
+                    <div class="pipeline-step__num">Step 01</div>
+                    <div class="pipeline-step__name">Vectorize</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">
+                    <div class="pipeline-step__num">Step 02</div>
+                    <div class="pipeline-step__name">Cosine Similarity</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">
+                    <div class="pipeline-step__num">Step 03</div>
+                    <div class="pipeline-step__name">Rank Results</div>
+                </div>
+            </div>
+
+            <div class="query-row">
+                <div class="query-input-wrap">
+                    <label class="query-label" for="query-input">Search Query</label>
+                    <input type="text" id="query-input" placeholder="e.g. how does a chatbot understand language"
+                        autocomplete="off" />
+                </div>
+                <button class="search-btn" id="search-btn" onclick="runSearch()">Search →</button>
+            </div>
+
+            <div class="try-row">
+                <span class="try-label">Try:</span>
+                <button class="try-chip" onclick="quickSearch('best diet for energy')">best diet for energy</button>
+                <button class="try-chip" onclick="quickSearch('world cup batting skills')">world cup batting
+                    skills</button>
+                <button class="try-chip" onclick="quickSearch('how does a chatbot answer questions')">how does a chatbot
+                    answer questions</button>
+            </div>
+
+            <p class="error-text" id="error-text"></p>
+        </section>
+
+                <div class="loader-row" id="loader-row">
+            <div class="loader-bar"></div>
+            <span>Computing cosine similarity…</span>
+        </div>
+
+                <section class="section" id="results-section" style="display:none;">
+            <div class="section__head">
+                <span class="section__num">03</span>
+                <h2 class="section__title">Ranked Results</h2>
+            </div>
+
+            <div id="results">
+                <div class="best-match-banner">
+                    <div>
+                        <div class="best-match-banner__label">Top Match — TF-IDF</div>
+                        <div class="best-match-banner__title" id="best-match-title">—</div>
+                        <div class="best-match-banner__snippet" id="best-match-snippet"></div>
+                    </div>
+                    <div class="best-match-banner__score" id="best-match-score">—</div>
+                </div>
+
+                <p class="method-note" id="method-note"></p>
+                <p class="score-legend">
+                    Similarity score: <code>0.0000</code> = no shared keywords &nbsp;·&nbsp;
+                    <code>1.0000</code> = perfect match &nbsp;·&nbsp; Higher = more relevant
+                </p>
+
+                <div class="results-two-col">
+                    <div class="method-col">
+                        <div class="method-col__title">Bag of Words — Raw Counts</div>
+                        <div id="bow-results"></div>
+                    </div>
+                    <div class="method-col">
+                        <div class="method-col__title">TF-IDF — Weighted Importance</div>
+                        <div id="tfidf-results"></div>
+                    </div>
+                </div>
+
+                <div class="stats-row" id="stats-row" style="display:none;">
+                    <div class="stat-block">
+                        <div class="stat-block__label">BoW Vocabulary</div>
+                        <div class="stat-block__value" id="bow-vocab">—</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-block__label">TF-IDF Vocabulary</div>
+                        <div class="stat-block__value" id="tfidf-vocab">—</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-block__label">Documents Searched</div>
+                        <div class="stat-block__value">5</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-block__label">Algorithm</div>
+                        <div class="stat-block__value">Cosine Similarity</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <span>Built by <strong>Atharva Phatangare</strong></span>
+            <span>Built with Flask + scikit-learn</span>
+        </footer>
+
+    </div>
+
+        <div id="manual-modal" class="modal-overlay" onclick="closeManualModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeManualModal()">&times;</button>
+            <h3 style="font-family: 'Archivo', sans-serif; margin-bottom: 0.6rem; font-size: 1.2rem; text-transform: uppercase;">Create Custom Dataset</h3>
+            <p style="font-size: 0.85rem; color: var(--grey); margin-bottom: 1.5rem;">Fill out up to 5 articles below.</p>
+            <div id="manual-forms" style="display: flex; flex-direction: column; gap: 1.5rem;"></div>
+            <button class="btn-outline" style="margin-top: 2rem; background: var(--ink); color: var(--paper); width: 100%;" onclick="submitManualDataset()">Build Dataset →</button>
+        </div>
+    </div>
+
+    <script>
+
+        async function handlePdfUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('pdf_' + i, files[i]);
+            }
+
+            try {
+                const res = await fetch('/upload_pdfs', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                
+                if (!res.ok) throw new Error(result.error);
+                
+                clearSearch();
+                loadDocuments();
+                alert(`Successfully loaded ${result.count} PDF documents!`);
+            } catch (err) {
+                alert("Failed to upload PDFs: " + err.message);
+            }
+            event.target.value = '';
+        }
+
+        function openManualModal() {
+            renderManualForms();
+            document.getElementById('manual-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeManualModal(e) {
+
+            if (!e || e.target.classList.contains('modal-overlay') || !e.target) {
+                document.getElementById('manual-modal').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function renderManualForms() {
+            const container = document.getElementById('manual-forms');
+            if (container.innerHTML.trim() !== '') return;
+            
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                html += `
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--line);">
+                    <label style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; text-transform: uppercase;">Article ${i} Title</label>
+                    <input type="text" id="manual-title-${i}" placeholder="e.g. History of Python" style="padding: 0.6rem; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif;">
+                    
+                    <label style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; text-transform: uppercase; margin-top: 0.5rem;">Content</label>
+                    <textarea id="manual-text-${i}" rows="3" placeholder="Paste article text here..." style="padding: 0.6rem; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        async function submitManualDataset() {
+            const data = {};
+            for (let i = 1; i <= 5; i++) {
+                const title = document.getElementById(`manual-title-${i}`).value.trim();
+                const text = document.getElementById(`manual-text-${i}`).value.trim();
+                if (title && text) {
+                    data[title] = text;
+                }
+            }
+            
+            if (Object.keys(data).length === 0) {
+                alert("Please fill out at least one article title and content.");
+                return;
+            }
+
+            try {
+                const res = await fetch('/upload_dataset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                
+                if (!res.ok) throw new Error(result.error);
+                
+                closeManualModal();
+                clearSearch();
+                loadDocuments();
+                alert(`Successfully loaded ${result.count} manual articles!`);
+            } catch (err) {
+                alert("Failed to build dataset: " + err.message);
+            }
+        }
+
+        async function loadSampleDataset() {
+            closeManualModal();
+            try {
+                const res = await fetch('/load_sample', { method: 'POST' });
+                if (!res.ok) throw new Error("Failed to load sample dataset");
+                
+                clearSearch();
+                loadDocuments();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function clearDataset() {
+            closeManualModal();
+            try {
+                const res = await fetch('/clear', { method: 'POST' });
+                if (!res.ok) throw new Error("Failed to clear dataset");
+                
+                clearSearch();
+                loadDocuments();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('query-input').value = '';
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('error-text').classList.remove('active');
+        }
+
+        async function loadDocuments() {
+            const res  = await fetch('/documents');
+            const data = await res.json();
+            const grid = document.getElementById('doc-grid');
+            
+            if (data.documents.length === 0) {
+                grid.innerHTML = '<p style="color: var(--grey); font-size: 0.85rem; font-family: \'IBM Plex Mono\', monospace; grid-column: 1 / -1;">— No documents loaded yet. Please add a dataset above.</p>';
+                return;
+            }
+
+            grid.innerHTML = data.documents.map((doc, i) => `
+        <div class="doc-card" style="animation: fadeUp 0.35s ease ${i * 0.08}s both;">
+          <div class="doc-card__num">${String(doc.id).padStart(2, '0')}</div>
+          <div class="doc-card__title">${doc.title}</div>
+          <div class="doc-card__preview">${doc.preview}</div>
+        </div>
+      `).join('');
+        }
+
+        function quickSearch(text) {
+            document.getElementById('query-input').value = text;
+            runSearch();
+        }
+
+        document.getElementById('query-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') runSearch();
+        });
+
+        async function runSearch() {
+            const query       = document.getElementById('query-input').value.trim();
+            const errorEl     = document.getElementById('error-text');
+            const loader      = document.getElementById('loader-row');
+            const resultsSection = document.getElementById('results-section');
+            const btn         = document.getElementById('search-btn');
+
+            errorEl.classList.remove('active');
+
+            if (!query) {
+                errorEl.textContent = '— Enter a query to search.';
+                errorEl.classList.add('active');
+                return;
+            }
+
+            btn.disabled = true;
+            loader.classList.add('active');
+            resultsSection.style.display = 'none';
+
+            try {
+                const res  = await fetch('/search', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ query }),
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'Search failed.');
+
+                renderResults(data);
+                resultsSection.style.display = 'block';
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                errorEl.textContent = '— ' + err.message;
+                errorEl.classList.add('active');
+            } finally {
+                loader.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function renderResults(data) {
+
+            document.getElementById('best-match-title').textContent =
+                data.best_match || 'No relevant match';
+            document.getElementById('best-match-score').textContent =
+                data.best_match ? data.tfidf_results[0].score.toFixed(3) : '0.000';
+
+            const snippetEl = document.getElementById('best-match-snippet');
+            snippetEl.textContent = data.best_snippet ? '“' + data.best_snippet + '…”' : '';
+
+            const noteEl = document.getElementById('method-note');
+            if (data.best_match && data.bow_winner && data.bow_winner !== data.best_match) {
+                noteEl.textContent =
+                    '⚡ Methods disagree — BoW ranks “' + data.bow_winner +
+                    '” first, while TF-IDF ranks “' + data.best_match +
+                    '” first. TF-IDF is usually more reliable because it down-weights ' +
+                    'very common words that appear across all documents.';
+                noteEl.classList.add('active');
+            } else {
+                noteEl.textContent = '';
+                noteEl.classList.remove('active');
+            }
+
+            const statsRow = document.getElementById('stats-row');
+            if (data.bow_vocab_size) {
+                document.getElementById('bow-vocab').textContent  = data.bow_vocab_size  + ' unique terms';
+                document.getElementById('tfidf-vocab').textContent = data.tfidf_vocab_size + ' unique terms';
+                statsRow.style.display = 'flex';
+            }
+
+            renderRankList('bow-results',   data.bow_results);
+            renderRankList('tfidf-results', data.tfidf_results);
+
+            setTimeout(() => {
+                document.querySelectorAll('.rank-item__bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.pct + '%';
+                });
+            }, 80);
+        }
+
+        function renderRankList(containerId, results) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = results.map((r, i) => `
+        <div class="rank-item">
+          <div class="rank-item__num">${String(i + 1).padStart(2, '0')}</div>
+          <div class="rank-item__body">
+            <div class="rank-item__title">${r.title}</div>
+            <div class="rank-item__bar-row">
+              <div class="rank-item__bar-track">
+                <div class="rank-item__bar-fill" data-pct="${r.pct}"></div>
+              </div>
+              <div class="rank-item__score">${r.score.toFixed(4)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+        }
+
+        loadDocuments();
+
+        function toggleTheme() {
+            const btn    = document.getElementById('theme-toggle');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                btn.innerHTML = '&#9790; Dark';
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                btn.innerHTML = '&#9728; Light';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        (function() {
+            const saved = localStorage.getItem('theme');
+            const btn = document.getElementById('theme-toggle');
+            if (saved === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                btn.innerHTML = '&#9728; Light';
+            }
+        })();
+    </script>
+
+</body>
+
+</html>
